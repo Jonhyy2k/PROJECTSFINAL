@@ -90,19 +90,23 @@ def analyze_stock(symbol, client):
         # Get current price
         current_price = quote_data['price'] if quote_data else stock_data['4. close'].iloc[-1] #
 
-        # --- NEW: Fetch dynamic news sentiment ---
-        print(f"[INFO] Fetching news sentiment for {symbol}...")
-        sentiment_score = get_normalized_news_sentiment(symbol)
-        # Use a default neutral score if fetching fails
-        sentiment_score_for_calc = sentiment_score if sentiment_score is not None else 0.5
-        if sentiment_score is not None:
-             print(f"[INFO] Retrieved Normalized News Sentiment: {sentiment_score:.4f}")
-        else:
-             print(f"[WARNING] Could not retrieve news sentiment for {symbol}. Using default 0.5.")
-        # --- End NEW ---
+        try:
+            # --- NEW: Fetch dynamic news sentiment ---
+            print(f"[INFO] Fetching news sentiment for {symbol}...")
+            sentiment_score = get_normalized_news_sentiment(symbol)
+            # Use a default neutral score if fetching fails
+            sentiment_score_for_calc = sentiment_score if sentiment_score is not None else 0.5
+            if sentiment_score is not None:
+                print(f"[INFO] Retrieved Normalized News Sentiment: {sentiment_score:.4f}")
+            else:
+                print(f"[WARNING] Could not retrieve news sentiment for {symbol}. Using default 0.5.")
+        except ImportError:
+            print("[WARNING] Error accesing bloomberg terminal. Proceeding with normal path...")
+        except Exception as e:
+            print(f"[ERROR] Error fetching data for {symbol}: {e}. Using Default 0.5")
 
         # --- MODIFIED: Pass sentiment_score_for_calc to calculate_sigma ---
-        analysis_details = calculate_sigma(stock_data) # Pass the score here
+        analysis_details = calculate_sigma(stock_data, sentiment_score_for_calc) # Pass the score here
 
         if analysis_details is None: #
             print(f"[WARNING] Failed to calculate sigma for {symbol}") #
@@ -417,7 +421,7 @@ import traceback
 # Modified calculate_sigma function (originally from semibloom.txt)
 # Note the added 'sentiment_score' argument
 # calculate_sigma function modified based on user request
-def calculate_sigma(data):
+def calculate_sigma(data, sentiment_score_input):
     """Calculate comprehensive sigma metric using log returns-based mean reversion with normalized sentiment (Modified: News sentiment adjustment applied post-calculation)"""
     try:
         # Set a maximum execution time for the entire function
@@ -585,7 +589,7 @@ def calculate_sigma(data):
 
         # Assume normalized_sentiment is imported from bloomberg.py
         # Retrieve news sentiment but don't include it in the initial component calculation
-        news_sentiment_value = normalized_sentiment if normalized_sentiment is not None else 0.5
+        news_sentiment_value = sentiment_score_input
         print(f"[INFO] Using normalized news sentiment (for adjustment): {news_sentiment_value:.2f}")
 
         # Component groups for Sigma calculation
