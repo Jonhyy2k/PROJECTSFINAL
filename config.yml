@@ -1,0 +1,7 @@
+tunnel: 2272ece9-d9a8-4138-b429-c27fd90382b6
+credentials-file: /home/joaop/.cloudflared/2272ece9-d9a8-4138-b429-c27fd90382b6.json
+
+ingress:
+  - hostname: www.quantpulse.org
+    service: http://localhost:5000
+  - service: http_status:404
